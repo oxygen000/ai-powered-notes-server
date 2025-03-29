@@ -18,7 +18,7 @@ const app = express();
 
 app.use(cookieParser());
 app.use(cors({
-  origin: "https://ai-powered-notes-frontend.vercel.app", // السماح للفرونت إند
+  origin: "*", // السماح للفرونت إند
   methods: ["GET", "POST", "PUT", "DELETE"], // السماح بالطلبات
   allowedHeaders: ["Content-Type", "Authorization"], // السماح بالهيدرز
   credentials: true // إذا كنت تستخدم `cookies` أو `JWT`
