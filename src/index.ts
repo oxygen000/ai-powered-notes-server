@@ -19,7 +19,7 @@ const app = express();
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://ai-powered-notes.vercel.app/", // غيّره ليطابق واجهتك الأمامية
+    origin: "https://ai-powered-notes-frontend.vercel.app", // غيّره ليطابق واجهتك الأمامية
     credentials: true,
   })
 );
