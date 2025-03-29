@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../../models/User";
 import { generateOtp } from "../../utils/opt";
-import emailTemplates from "../../emails/emailTemplates";
 import { sendEmail } from "../../emails/sendEmail";
 
 export const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

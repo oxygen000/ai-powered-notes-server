@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import User from "../models/User";
-import sendEmail from "../emails/sendEmail";
 
 dotenv.config();
 
@@ -28,12 +27,7 @@ const createAdmin = async () => {
 
     await admin.save();
 
-    // 📩 إرسال بريد ترحيبي للأدمن
-    await sendEmail(
-      "admin@admin.com",
-      "Welcome to AI-Powered Notes",
-      "🎉 Your admin account has been created! Use email: admin@admin.com and password: admin123"
-    );
+
 
     console.log("🚀 Admin account created successfully");
   } catch (error) {

@@ -2,53 +2,90 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 
-// ✅ تعريف نوع `AuthRequest` ليشمل `user`
 interface AuthRequest extends Request {
-  user?: { id: string; role: string };
+  user?: { id: string; name: string; email: string; role: string };
 }
 
-// 📌 حماية المسارات باستخدام JWT
-export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  let token;
+// ✅ [1] - التحقق من المستخدم عبر التوكن
+export const authenticateUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    let token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
 
-  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    try {
-      token = req.headers.authorization.split(" ")[1];
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-
-      const user = await User.findById(decoded.id).select("-password");
-
-      if (!user) {
-        res.status(401).json({ message: "User not found" });
-        return;
-      }
-
-      req.user = { id: user.id, role: user.role }; // 🛡️ إضافة الدور (Role)
-      next();
-    } catch (error) {
-      res.status(401).json({ message: "Invalid token" });
+    if (!token) {
+      res.status(401).json({ message: "Unauthorized: No token provided" });
+      return;
     }
-  }
 
-  if (!token) {
-    res.status(401).json({ message: "Not authorized, no token" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized: User not found" });
+      return;
+    }
+
+    req.user = { id: user.id, name: user.name, email: user.email, role: user.role };
+    console.log(`✅ User authenticated: ${user.email}`);
+    next();
+  } catch (error) {
+    console.error("❌ Authentication error:", error);
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
-// 📌 Middleware للتحقق من دور المستخدم (Admin فقط)
-export const isAdmin = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({ message: "Not authorized" });
-    return;
+// ✅ [2] - تسجيل دخول المستخدم
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({ message: "Email and password are required" });
+      return;
+    }
+
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password))) {
+      res.status(401).json({ message: "Invalid email or password" });
+      return;
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, {
+      expiresIn: "7d",
+      algorithm: "HS256",
+    });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    console.log(`✅ User logged in: ${user.email}`);
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      redirect: "/home",
+    });
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    res.status(500).json({ message: "Server error during login" });
   }
+};
 
-  const user = await User.findById(req.user.id);
+// ✅ [3] - تسجيل خروج المستخدم
+export const logoutUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
 
-  if (!user || user.role !== "admin") {
-    res.status(403).json({ message: "Not authorized as admin" });
-    return;
+    console.log("✅ User logged out");
+    res.json({ message: "Logged out successfully", redirect: "/login" });
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+    res.status(500).json({ message: "Server error during logout" });
   }
-
-  next();
 };

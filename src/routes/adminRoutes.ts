@@ -1,5 +1,5 @@
 import express from "express";
-import { protect, isAdmin } from "../middleware/authMiddleware";
+import { protect, isAdmin } from "../middleware/adminMiddleware";
 import { getUsers } from "../controllers/adminController"; // دالة لاسترداد المستخدمين
 
 const router = express.Router();

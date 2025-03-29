@@ -6,9 +6,11 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import connectDB from "./config/db";
+import session from "express-session";
 import noteRoutes from "./routes/noteRoutes";
 import userRoutes from "./routes/userRoutes";
 import errorHandler from "./middleware/errorMiddleware";
+import cookieParser from "cookie-parser";
 
 // 📌 تحميل متغيرات البيئة
 dotenv.config();
@@ -16,7 +18,21 @@ dotenv.config();
 const app = express();
 
 // 📌 Middleware
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS || "*" }));
+app.use(cookieParser());
+app.use(cors({
+  origin: "http://localhost:5173", // غير هذا العنوان ليتناسب مع عنوان واجهتك الأمامية
+  credentials: true,
+}));
+app.use(session({
+  secret: "mySuperSecretKey123!",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // اجعله `true` إذا كنت تستخدم HTTPS
+    httpOnly: true,
+    sameSite: "lax", // أو "none" مع `secure: true` إذا كنت تستخدم HTTPS
+  }
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());

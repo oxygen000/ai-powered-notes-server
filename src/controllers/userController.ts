@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/User";
 import jwt from "jsonwebtoken";
+import { authenticateUser } from "../middleware/authMiddleware";
 
 // ✅ تعريف نوع `AuthRequest` ليشمل `user`
 interface AuthRequest extends Request {
@@ -30,11 +31,10 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<v
 
     res.status(200).json(user);
   } catch (error) {
+    console.error("❌ Error fetching user profile:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
-
-
 
 // 📌 تحديث بيانات المستخدم
 export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -50,8 +50,9 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    if (req.body.username) user.username = req.body.username;
-    if (req.body.avatar) user.avatar = req.body.avatar;
+    const { username, avatar } = req.body;
+    if (username) user.username = username;
+    if (avatar) user.avatar = avatar;
 
     await user.save();
 
@@ -65,12 +66,10 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
       token: generateToken(user.id, user.role),
     });
   } catch (error) {
+    console.error("❌ Error updating user profile:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
-
-
-
 
 // 📌 حذف الحساب نهائيًا
 export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -83,11 +82,10 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
     await User.findByIdAndDelete(req.user.id);
     res.status(200).json({ message: "Account deleted successfully." });
   } catch (error) {
+    console.error("❌ Error deleting account:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
-
-
 
 // 📌 جلب بيانات مستخدم معين عبر الـ ID
 export const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -98,10 +96,17 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
       res.status(404).json({ message: "User not found" });
       return;
     }
+    
     res.status(200).json(user);
   } catch (error) {
+    console.error("❌ Error fetching user by ID:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
-;
 
+// 📌 جلب بيانات المستخدم عبر التوكن
+export const getUser = (req: Request, res: Response): void => {
+  authenticateUser(req, res, () => {
+    res.status(200).json({ user: (req as AuthRequest).user });
+  });
+};

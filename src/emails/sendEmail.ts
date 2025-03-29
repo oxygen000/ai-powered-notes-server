@@ -4,45 +4,44 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// إنشاء ناقل البريد الإلكتروني باستخدام إعدادات Mailtrap
 const transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 587, // يمكنك استخدام 2525 أيضًا حسب الإعدادات في Mailtrap
+  service: "gmail",         // استخدام Gmail
+  host: "smtp.gmail.com",   // خادم SMTP لـ Gmail
+  port: 465,                // المنفذ المشفر (TLS)
+  secure: true,             // استخدم SSL/TLS
   auth: {
-    user: process.env.MAILTRAP_USER, // اسم المستخدم من Mailtrap
-    pass: process.env.MAILTRAP_PASS, // كلمة المرور من Mailtrap
+    user: process.env.GMAIL_USER, // بريد Gmail المرسل
+    pass: process.env.GMAIL_APP_PASSWORD, // كلمة مرور التطبيق (App Password)
   },
 });
 
 /**
- * دالة لإرسال البريد الإلكتروني باستخدام Mailtrap
- * @param to البريد الإلكتروني للمرسل إليه
- * @param templateKey اسم قالب البريد
- * @param params المعطيات المخصصة للقالب
+ * إرسال البريد الإلكتروني عبر Gmail SMTP
+ * @param to البريد الإلكتروني للمستلم
+ * @param templateKey مفتاح القالب المستخدم
+ * @param params البيانات المستخدمة داخل القالب
  */
 export async function sendEmail(to: string, templateKey: keyof typeof emailTemplates, params: any) {
   const templateFunction = emailTemplates[templateKey];
 
   if (!templateFunction) {
-    throw new Error(`Template "${templateKey}" not found.`);
+    throw new Error(`❌ قالب البريد "${templateKey}" غير موجود.`);
   }
 
-  // توليد محتوى البريد من القالب
   const emailContent = templateFunction(params);
 
   try {
-    // إرسال البريد الإلكتروني عبر Mailtrap
     const info = await transporter.sendMail({
-      from: '"Ai Powered Notes" <no-reply@yourapp.com>', // عنوان المرسل
+      from: `"Ai Notes" <${process.env.GMAIL_USER}>`, // بريد المرسل
       to,
       subject: emailContent.subject,
       html: emailContent.html,
     });
 
-    console.log(`📩 Email sent to ${to}: ${info.messageId}`);
-    return { success: true, message: "Email sent successfully" };
+    console.log(`📩 تم إرسال البريد إلى ${to}: ${info.messageId}`);
+    return { success: true, message: "تم إرسال البريد بنجاح" };
   } catch (error) {
-    console.error("❌ Error sending email:", error);
-    return { success: false, message: "Failed to send email", error };
+    console.error("❌ خطأ أثناء إرسال البريد:", error);
+    return { success: false, message: "فشل إرسال البريد", error };
   }
 }
