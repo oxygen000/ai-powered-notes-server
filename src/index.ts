@@ -18,10 +18,9 @@ const app = express();
 
 app.use(cookieParser());
 app.use(cors({
-  origin: "*", // السماح للفرونت إند
-  methods: ["GET", "POST", "PUT", "DELETE"], // السماح بالطلبات
-  allowedHeaders: ["Content-Type", "Authorization"], // السماح بالهيدرز
-  credentials: true // إذا كنت تستخدم `cookies` أو `JWT`
+  origin: "*", // السماح لأي موقع بطلب API
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(
   session({
