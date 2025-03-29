@@ -17,12 +17,12 @@ dotenv.config();
 const app = express();
 
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: "https://ai-powered-notes-frontend.vercel.app", // غيّره ليطابق واجهتك الأمامية
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "https://ai-powered-notes-frontend.vercel.app", // السماح للفرونت إند
+  methods: ["GET", "POST", "PUT", "DELETE"], // السماح بالطلبات
+  allowedHeaders: ["Content-Type", "Authorization"], // السماح بالهيدرز
+  credentials: true // إذا كنت تستخدم `cookies` أو `JWT`
+}));
 app.use(
   session({
     secret: "mySuperSecretKey123!",
