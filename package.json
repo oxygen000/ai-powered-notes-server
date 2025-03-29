@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "prestart": "npm run build",
+    "start": "node dist/index.js",
+    "serve": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +15,7 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "@vercel/node": "^5.1.14",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.0",
@@ -28,8 +31,6 @@
     "mongoose": "^8.12.1",
     "morgan": "^1.10.0",
     "nodemailer": "^6.10.0",
-    "openai": "^4.89.0",
-    "resend": "^4.2.0",
     "tsconfig-paths": "^4.2.0",
     "xss-clean": "^0.1.4"
   },

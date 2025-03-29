@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
@@ -12,34 +12,34 @@ import userRoutes from "./routes/userRoutes";
 import errorHandler from "./middleware/errorMiddleware";
 import cookieParser from "cookie-parser";
 
-// 📌 تحميل متغيرات البيئة
 dotenv.config();
 
 const app = express();
 
-// 📌 Middleware
 app.use(cookieParser());
-app.use(cors({
-  origin: "http://localhost:5173", // غير هذا العنوان ليتناسب مع عنوان واجهتك الأمامية
-  credentials: true,
-}));
-app.use(session({
-  secret: "mySuperSecretKey123!",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // اجعله `true` إذا كنت تستخدم HTTPS
-    httpOnly: true,
-    sameSite: "lax", // أو "none" مع `secure: true` إذا كنت تستخدم HTTPS
-  }
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173", // غيّره ليطابق واجهتك الأمامية
+    credentials: true,
+  })
+);
+app.use(
+  session({
+    secret: "mySuperSecretKey123!",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      sameSite: "lax",
+    },
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(compression());
 
-
-// 📌 تحديد معدل الطلبات لمنع الهجمات (مثل DDoS)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -47,31 +47,27 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// 📌 المسارات
 app.use("/api/notes", noteRoutes);
 app.use("/api/users", userRoutes);
-
-
-// 📌 Middleware لمعالجة الأخطاء
 app.use(errorHandler);
 
-// 📌 تشغيل السيرفر
-const PORT = process.env.PORT || 5000;
-const startServer = async () => {
-  try {
-    await connectDB();
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT} in ${process.env.NODE_ENV} mode`);
-    });
-  } catch (error) {
-    console.error("❌ Server startup failed:", error);
-    process.exit(1);
-  }
-};
+app.get("/", (req: Request, res: Response) => {
+  res.send("🚀 Server is running on Vercel!");
+});
 
-startServer();
+connectDB()
+  .then(() => console.log("✅ Connected to Database"))
+  .catch((err) => {
+    console.error("❌ Database connection failed:", err);
+    process.exit(1);
+  });
+
+// تصدير التطبيق ليعمل كـ Serverless Function
+import { VercelRequest, VercelResponse } from "@vercel/node";
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  app(req as unknown as Request, res as unknown as Response);
+}
