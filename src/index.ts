@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
@@ -16,33 +16,46 @@ dotenv.config();
 
 const app = express();
 
+(async () => {
+  try {
+    await connectDB();
+    console.log("✅ Connected to Database");
+  } catch (err) {
+    console.error("❌ Database connection failed:", err);
+    process.exit(1);
+  }
+})();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({
-  origin: "*", // السماح لأي موقع بطلب API
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+app.use(helmet());
+app.use(compression());
+
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5000",
+    credentials: true,
+  })
+);
+
 app.use(
   session({
-    secret: "mySuperSecretKey123!",
+    secret: process.env.SESSION_SECRET || "mySuperSecretKey123!",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "lax",
     },
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(helmet());
-app.use(compression());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: "⚠️ تم تجاوز الحد المسموح به من الطلبات، حاول لاحقًا!",
+  message: "⚠️ Request limit exceeded, please try again later!",
 });
 app.use(limiter);
 
@@ -52,21 +65,8 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/notes", noteRoutes);
 app.use("/api/users", userRoutes);
+
 app.use(errorHandler);
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("🚀 Server is running on Vercel!");
-});
-
-connectDB()
-  .then(() => console.log("✅ Connected to Database"))
-  .catch((err) => {
-    console.error("❌ Database connection failed:", err);
-    process.exit(1);
-  });
-
-// تصدير التطبيق ليعمل كـ Serverless Function
-import { VercelRequest, VercelResponse } from "@vercel/node";
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  app(req as unknown as Request, res as unknown as Response);
-}
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

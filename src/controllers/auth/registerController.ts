@@ -13,19 +13,19 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
     password = password?.trim();
 
     if (!name || !username || !email || !password) {
-      res.status(400).json({ message: "جميع الحقول مطلوبة" });
+      res.status(400).json({ message: "All fields are required" });
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      res.status(400).json({ message: "تنسيق البريد الإلكتروني غير صالح" });
+      res.status(400).json({ message: "Invalid email format" });
       return;
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      res.status(400).json({ message: "المستخدم مسجل بالفعل" });
+      res.status(400).json({ message: "User already registered" });
       return;
     }
 
@@ -49,12 +49,12 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
     await sendEmail(newUser.email, "welcome", { name: newUser.name, otp: newUser.otp });
 
     res.status(201).json({ 
-      message: "تم التسجيل بنجاح! تحقق من بريدك الإلكتروني لتفعيل الحساب.",
+      message: "Registration successful! Check your email to verify your account.",
       userId: newUser._id,
       redirect: `/verify-otp?email=${newUser.email}`
     });
 
   } catch (error) {
-    res.status(500).json({ message: "خطأ في الخادم", error });
+    res.status(500).json({ message: "Server error", error });
   }
 };

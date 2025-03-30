@@ -6,7 +6,6 @@ interface AuthRequest extends Request {
   user?: { id: string; name: string; email: string; role: string };
 }
 
-// ✅ [1] - التحقق من المستخدم عبر التوكن
 export const authenticateUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     let token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
@@ -33,7 +32,6 @@ export const authenticateUser = async (req: AuthRequest, res: Response, next: Ne
   }
 };
 
-// ✅ [2] - تسجيل دخول المستخدم
 export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -57,7 +55,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
     console.log(`✅ User logged in: ${user.email}`);
@@ -73,7 +71,6 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// ✅ [3] - تسجيل خروج المستخدم
 export const logoutUser = async (req: Request, res: Response): Promise<void> => {
   try {
     res.clearCookie("token", {

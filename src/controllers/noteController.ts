@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import Note from "../models/Note";
 
-// 🟢 إنشاء ملاحظة جديدة
 export const createNote = async (req: Request, res: Response) => {
   try {
     const { title, content, userId } = req.body;
@@ -15,7 +14,6 @@ export const createNote = async (req: Request, res: Response) => {
 };
 
 
-// 🔵 جلب جميع الملاحظات لمستخدم معين
 export const getNotes = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -26,7 +24,6 @@ export const getNotes = async (req: Request, res: Response) => {
   }
 };
 
-// 🟡 تحديث ملاحظة
 export const updateNote = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -37,7 +34,6 @@ export const updateNote = async (req: Request, res: Response) => {
   }
 };
 
-// 🔴 حذف ملاحظة
 export const deleteNote = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

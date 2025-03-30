@@ -24,13 +24,11 @@ export const resendOtp = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Generate new OTP and update user
     const newOtp = generateOtp();
     user.otp = newOtp;
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
     await user.save();
 
-    // Send OTP via email
     await sendEmail(user.email, "welcome", { name: user.name, otp: newOtp });
 
     res.status(200).json({ message: "A new OTP has been sent to your email." });

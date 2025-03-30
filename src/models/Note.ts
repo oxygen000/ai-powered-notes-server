@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-// 🎯 تعريف الواجهة TypeScript لمودل الملاحظات
 export interface INote extends Document {
   userId: mongoose.Schema.Types.ObjectId;
   title: string;
@@ -18,28 +17,27 @@ const NoteSchema: Schema<INote> = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true, // تحسين سرعة البحث عن ملاحظات مستخدم معين
+      index: true, 
     },
     title: {
       type: String,
       required: true,
       trim: true,
-      maxlength: 100, // الحد الأقصى لطول العنوان
+      maxlength: 100, 
     },
     content: {
       type: String,
       required: true,
       trim: true,
-      minlength: 10, // الحد الأدنى لطول المحتوى لمنع الرسائل الفارغة
+      minlength: 10, 
     },
-    isArchived: { type: Boolean, default: false }, // للحفاظ على الملاحظات بدلاً من حذفها
-    isPinned: { type: Boolean, default: false }, // تثبيت الملاحظات المهمة
-    deletedAt: { type: Date, default: null }, // لتحديد وقت الحذف بدلاً من الحذف النهائي
+    isArchived: { type: Boolean, default: false }, 
+    isPinned: { type: Boolean, default: false }, 
+    deletedAt: { type: Date, default: null }, 
   },
   { timestamps: true }
 );
 
-// 🛡️ منع عمليات البحث عن الملاحظات المحذوفة
 NoteSchema.pre(/^find/, function (next) {
   if (!(this as mongoose.Query<any, any>).getQuery().deletedAt) {
     (this as mongoose.Query<any, any>).getQuery().deletedAt = null;
@@ -49,7 +47,6 @@ NoteSchema.pre(/^find/, function (next) {
 
 
 
-// 🔄 وظيفة لحذف الملاحظات بدون فقدانها نهائيًا
 NoteSchema.methods.softDelete = async function () {
   this.deletedAt = new Date();
   await this.save();

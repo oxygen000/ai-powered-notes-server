@@ -2,12 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 
-// ✅ تعريف نوع `AuthRequest` ليشمل `user`
 interface AuthRequest extends Request {
   user?: { id: string; role: string };
 }
 
-// 📌 حماية المسارات باستخدام JWT
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   let token;
 
@@ -24,7 +22,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
         return;
       }
 
-      req.user = { id: user.id, role: user.role }; // 🛡️ إضافة الدور (Role)
+      req.user = { id: user.id, role: user.role }; 
       next();
     } catch (error) {
       res.status(401).json({ message: "Invalid token" });
@@ -36,7 +34,6 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 };
 
-// 📌 Middleware للتحقق من دور المستخدم (Admin فقط)
 export const isAdmin = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ message: "Not authorized" });

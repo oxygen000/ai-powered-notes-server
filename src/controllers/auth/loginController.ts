@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import User from "../../models/User";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { sendEmail } from "../../emails/sendEmail";
 
 // ✅ تعريف نوع `AuthRequest` ليشمل بيانات المستخدم
 interface AuthRequest extends Request {
@@ -32,14 +34,23 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // ✅ التحقق مما إذا كان الحساب يحتاج إلى تفعيل (OTP موجود)
+    // ✅ التحقق مما إذا كان الحساب غير مفعل بسبب OTP
     if (user.otp) {
-      if (user.otpExpires && new Date(user.otpExpires) < new Date()) {
-        res.status(400).json({ message: "OTP expired. Please request a new OTP." });
-        return;
+      // إذا كان الـ OTP منتهي الصلاحية، قم بإرسال واحد جديد
+      if (!user.otpExpires || new Date(user.otpExpires).getTime() < Date.now()) {
+        user.otp = crypto.randomInt(100000, 999999).toString(); // كود عشوائي من 6 أرقام
+        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // مدة الصلاحية 10 دقائق
+        await user.save();
+
+        // إرسال OTP جديد
+        await sendEmail(user.email, "welcome", { name: user.name, otp: user.otp });
       }
 
-      res.status(400).json({ message: "Please verify your OTP before logging in." });
+      res.status(400).json({
+        message: "Your account is not verified. We have sent a new OTP. Please verify your account.",
+        redirectTo: "/verify-otp",
+        email: user.email, // إرسال البريد الإلكتروني للفرونت لعرضه في صفحة التحقق
+      });
       return;
     }
 
@@ -87,21 +98,18 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     // ✅ التحقق من صحة التوكن
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string; role: string };
 
-    // ✅ إرفاق بيانات المستخدم بالطلب
-    req.user = { id: decoded.id, role: decoded.role };
+    // ✅ جلب المستخدم بناءً على التوكن
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      res.status(401).json({ message: "User not found. Authorization denied." });
+      return;
+    }
+
+    req.user = { id: user.id, role: user.role };
 
     next();
   } catch (error) {
     console.error("🔴 Authentication error:", error);
     res.status(401).json({ message: "Invalid or expired token" });
   }
-};
-
-// ✅ التحقق من صلاحيات المسؤول (Admin)
-export const isAdmin = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  if (!req.user || req.user.role !== "admin") {
-    res.status(403).json({ message: "Access denied. Admins only." });
-    return;
-  }
-  next();
 };

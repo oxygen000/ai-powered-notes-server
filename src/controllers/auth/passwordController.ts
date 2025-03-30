@@ -9,7 +9,6 @@ interface AuthRequest extends Request {
   user?: { id: string; role: string };
 }
 
-// 📌 طلب إعادة تعيين كلمة المرور (إرسال OTP)
 export const requestPasswordReset = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body;
@@ -20,14 +19,12 @@ export const requestPasswordReset = async (req: Request, res: Response): Promise
       return;
     }
 
-    // 🔹 إنشاء OTP جديد
     const otpCode = generateOtp();
     user.otp = otpCode;
-    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // مدة الصلاحية 10 دقائق
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
     await user.save();
 
-    // 📨 إرسال OTP عبر البريد الإلكتروني
     const { subject, html } = emailTemplates.otpVerification({ name: user.name, otpCode });
     await sendEmail(email, "passwordChanged", { subject, html });
 
@@ -37,7 +34,6 @@ export const requestPasswordReset = async (req: Request, res: Response): Promise
   }
 };
 
-// 📌 إعادة تعيين كلمة المرور باستخدام OTP
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -58,17 +54,14 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // 🔹 تحديث كلمة المرور
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
 
-    // 🔹 إزالة OTP بعد الاستخدام
     user.otp = null;
     user.otpExpires = null;
 
     await user.save();
 
-    // 📨 إرسال تأكيد إعادة تعيين كلمة المرور
     const { subject, html } = emailTemplates.passwordChanged({ name: user.name });
     await sendEmail(email, "passwordChanged", { subject, html });
 
@@ -78,7 +71,6 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// 📌 تغيير كلمة المرور عند معرفة القديمة
 export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
@@ -110,7 +102,6 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-// 📌 إعادة تعيين كلمة المرور باستخدام رابط التأكيد
 export const newPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, newPassword } = req.body;
@@ -125,7 +116,6 @@ export const newPassword = async (req: Request, res: Response): Promise<void> =>
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
-    // 📨 إرسال بريد تأكيد تغيير كلمة المرور
     const { subject, html } = emailTemplates.passwordChanged({ name: user.name });
     await sendEmail(email, "passwordChanged", { subject, html });
 

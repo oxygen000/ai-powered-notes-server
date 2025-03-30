@@ -2,7 +2,6 @@ import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-// 🎯 تعريف الواجهات TypeScript للمستخدم
 export interface IUser extends Document {
   username: string;
   name: string;
@@ -27,7 +26,7 @@ const UserSchema: Schema<IUser> = new Schema(
   {
     username: {
       type: String,
-      required: [true, "Username is required"],  // ✅ تأكد من وجود `required: true`
+      required: [true, "Username is required"],  
     },
     name: { type: String, required: true, trim: true },
     email: {
@@ -58,7 +57,6 @@ const UserSchema: Schema<IUser> = new Schema(
   { timestamps: true }
 );
 
-// 🛡️ تشفير كلمة المرور قبل الحفظ
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
@@ -68,26 +66,23 @@ UserSchema.pre("save", async function (next) {
   next();
 });
 
-// 🔐 مقارنة كلمة المرور عند تسجيل الدخول
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// 🔑 توليد رمز إعادة تعيين كلمة المرور
 UserSchema.methods.generateResetToken = function (): string {
   const resetToken = crypto.randomBytes(32).toString("hex");
   this.resetPasswordToken = crypto
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-  this.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // صالح لـ 10 دقائق
+  this.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
   return resetToken;
 };
 
-// 🛡️ منع هجمات NoSQL Injection عند البحث
 UserSchema.index({ email: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
 
 const User = mongoose.model<IUser>("User", UserSchema);
