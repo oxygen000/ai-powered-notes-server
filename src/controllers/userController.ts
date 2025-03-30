@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/User";
 import jwt from "jsonwebtoken";
-import { authenticateUser } from "../middleware/authMiddleware";
 
 interface AuthRequest extends Request {
   user?: { id: string; role: string };

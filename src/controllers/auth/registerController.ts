@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import User from "../../models/User";
 import { generateOtp } from "../../utils/opt";
 import { sendEmail } from "../../emails/sendEmail";
 
-export const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
     let { name, username, email, password, role, avatar } = req.body;
 
